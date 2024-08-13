@@ -48,6 +48,7 @@ const ProfileFormat = (props) => {
             <View style={styles.profileContainer}>
                 <View style={styles.infoContainer}>
                     <TouchableOpacity
+                        activeOpacity={0.9}
                         onPress={props.handlePressImage}
                     >
                         <Image
@@ -57,6 +58,7 @@ const ProfileFormat = (props) => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
+                        activeOpacity={1}
                         style={styles.infoTextContainer}
                     >
                         <Text style={[styles.infoText, { fontWeight: '600' }]}>0</Text>
@@ -64,6 +66,7 @@ const ProfileFormat = (props) => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
+                        activeOpacity={1}
                         style={styles.infoTextContainer}
                     >
                         <Text style={[styles.infoText, { fontWeight: '600' }]}>0</Text>
@@ -71,6 +74,7 @@ const ProfileFormat = (props) => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
+                        activeOpacity={1}
                         style={styles.infoTextContainer}
                     >
                         <Text style={[styles.infoText, { fontWeight: '600' }]}>0</Text>
