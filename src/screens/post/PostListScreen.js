@@ -9,6 +9,7 @@ import Feather from "react-native-vector-icons/Feather"
 import Octicons from "react-native-vector-icons/Octicons"
 import { CONTAINER, TYPOGRAPHY } from "../../styles/commonStyles"
 import { useNavigation } from "@react-navigation/native"
+import PostFormat from "../../components/PostFormat"
 
 const PostListScreen = () => {
     const navigation = useNavigation()
@@ -37,6 +38,8 @@ const PostListScreen = () => {
                     <Feather name="send" size={26} color="#333333" />
                 </TouchableOpacity>
             </View>
+
+            <PostFormat />
         </SafeAreaView>
     )
 }
