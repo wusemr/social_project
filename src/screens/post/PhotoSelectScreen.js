@@ -23,7 +23,6 @@ const PhotoSelectScreen = () => {
     const ref = useRef(null)
 
     const [selectedPhoto, setSelectedPhoto] = useState([])
-    const [isSelected, setIsSelected] = useState(false)
     const navigation = useNavigation()
 
     const handleSelectPhoto = async () => {
@@ -43,7 +42,6 @@ const PhotoSelectScreen = () => {
                 }
                 return updatedPhotos
             })
-            setIsSelected(true)
         }).catch(error => {
             console.log('사진 선택 실패:', error)
             if (error.code !== "E_PICKER_CANCELLED") {
@@ -85,10 +83,12 @@ const PhotoSelectScreen = () => {
         if (item === ADD_PHOTO_ITEM) {
             return renderAddPhotoButton()
         }
+
         return (
-            <View>
+            <View style={styles.photoContainer}>
                 <Image source={{ uri: item }} style={styles.image} />
                 <TouchableOpacity
+                    style={styles.deleteIcon}
                     onPress={() => handleDeletedPhoto(item)}
                 >
                     <AntIcon name="closecircle" size={24} color='#777777' />
@@ -99,15 +99,16 @@ const PhotoSelectScreen = () => {
 
     useFocusEffect(
         useCallback(() => {
-            if (!isSelected) {
-                handleSelectPhoto()
-            }
-        }, [isSelected])
+            setSelectedPhoto([])
+
+            return () => {}
+        }, [])
     )
 
     useEffect(() => {
         if (selectedPhoto.length === 0) {
-            handleSelectPhoto()
+            setSelectedPhoto([ADD_PHOTO_ITEM])
+            // handleSelectPhoto()
         }
     }, [selectedPhoto])
 
@@ -161,5 +162,13 @@ const styles = StyleSheet.create({
     addButtonText: {
         fontSize: 100,
         fontWeight: 'bold'
+    },
+    photoContainer: {
+        position: 'relative'
+    },
+    deleteIcon: {
+        position: 'absolute',
+        top: 7,
+        right: 7
     }
 })
