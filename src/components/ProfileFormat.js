@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import {
     View,
     Text,
@@ -8,8 +9,9 @@ import {
     Dimensions
 } from "react-native"
 import Ionicon from "react-native-vector-icons/Ionicons"
+import { Server } from "@env"
 
-const {width} = Dimensions.get('window')
+const { width } = Dimensions.get('window')
 const numColumns = 3
 const itemSize = (width - 30) / numColumns
 
@@ -31,17 +33,44 @@ const posts = [
 ]
 
 const ProfileFormat = (props) => {
+    const { handlePressImage, userid } = props
+    const [userInfo, setUserInfo] = useState(null)
+
+    const renderUserInfo = async () => {
+        try {
+            const response = await fetch(`${Server}/user/get-info?userid=${userid}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error('서버에서 사용자 정보를 가져오는 중 오류가 발생했습니다.');
+            }
+
+            const data = await response.json();
+            setUserInfo(data);
+            console.log(`현재 조회한 ${userid} 님의 정보:`, userInfo);
+        } catch (error) {
+            console.error('사용자 정보를 가져오는 중 오류가 발생했습니다.', error);
+        }
+    }
 
     const renderPost = ({ item }) => {
         return (
             <TouchableOpacity
-            style={styles.postItem}
-            onPress={() => console.log(`Pressed post with id: ${item.id}`)}
+                style={styles.postItem}
+                onPress={() => console.log(`Pressed post with id: ${item.id}`)}
             >
                 <Image source={item.image} style={styles.postImage} />
             </TouchableOpacity>
         )
     }
+
+    useEffect(() => {
+        if (userid) {
+            renderUserInfo()
+        }
+    }, [userid])
 
     return (
         <>
@@ -49,7 +78,7 @@ const ProfileFormat = (props) => {
                 <View style={styles.infoContainer}>
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        onPress={props.handlePressImage}
+                        onPress={handlePressImage}
                     >
                         <Image
                             source={require('../images/profile.jpeg')}
@@ -61,7 +90,7 @@ const ProfileFormat = (props) => {
                         activeOpacity={1}
                         style={styles.infoTextContainer}
                     >
-                        <Text style={[styles.infoText, { fontWeight: '600' }]}>0</Text>
+                        <Text style={[styles.infoText, { fontWeight: '600' }]}>{userInfo.posts_count}</Text>
                         <Text style={styles.infoText}>게시물</Text>
                     </TouchableOpacity>
 
@@ -69,7 +98,7 @@ const ProfileFormat = (props) => {
                         activeOpacity={1}
                         style={styles.infoTextContainer}
                     >
-                        <Text style={[styles.infoText, { fontWeight: '600' }]}>0</Text>
+                        <Text style={[styles.infoText, { fontWeight: '600' }]}>{userInfo.followers_count}</Text>
                         <Text style={styles.infoText}>팔로워</Text>
                     </TouchableOpacity>
 
@@ -77,13 +106,13 @@ const ProfileFormat = (props) => {
                         activeOpacity={1}
                         style={styles.infoTextContainer}
                     >
-                        <Text style={[styles.infoText, { fontWeight: '600' }]}>0</Text>
+                        <Text style={[styles.infoText, { fontWeight: '600' }]}>{userInfo.following_count}</Text>
                         <Text style={styles.infoText}>팔로잉</Text>
                     </TouchableOpacity>
                 </View>
 
                 <View>
-                    <Text style={[styles.infoText, { fontWeight: 'bold' }]}>김지연</Text>
+                    <Text style={[styles.infoText, { fontWeight: 'bold' }]}>{userInfo.username}</Text>
                     <Text style={styles.infoText}>https://blog.naver.com/wusemr2</Text>
                 </View>
             </View>

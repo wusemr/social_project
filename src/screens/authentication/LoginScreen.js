@@ -12,9 +12,12 @@ import MaterialIcon from "react-native-vector-icons/MaterialIcons"
 import FeatherIcon from "react-native-vector-icons/Feather"
 import { CONTAINER, TYPOGRAPHY, BUTTONS, COLOR, SHADOWS, BUTTON } from "../../styles/commonStyles"
 import { useNavigation } from "@react-navigation/native"
+import { Server } from "@env"
+import { useUser } from "../../auth/UserContext"
 
 const LoginScreen = () => {
     const navigation = useNavigation()
+    const { login } = useUser()
 
     const [id, setId] = useState('')
     const [password, setPassword] = useState('')
@@ -25,33 +28,50 @@ const LoginScreen = () => {
         Keyboard.dismiss()
     }
 
-    const handleLoginButton = () => {
-        const checkLogin = () => {
-            // 로그인이 실패하면
-            // 1. 존재하지 않는 아이디입니다.
-            // 2. 비밀번호가 맞지 않습니다.
-            // 둘 중 하나 반환
-            // 그리고 return false
-            return true
+    const handleLoginButton = async () => {
+        if (!id || !password) {
+            setLoginCheckLabel('로그인 정보를 모두 입력해주세요.');
         }
 
-        if (!checkLogin) {
-            setLoginCheckLabel()
-        } else {
-            navigation.navigate("MainTab")
-            setId('')
-            setPassword('')
+        try {
+            const response = await fetch(`${Server}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userid: id, password })
+            });
+
+            if (response.status === 404) {
+                setLoginCheckLabel('존재하지 않는 아이디입니다.');
+            } else if (response.status === 401) {
+                setLoginCheckLabel('비밀번호가 일치하지 않습니다.');
+            } else if (response.status === 200) {
+                const {userid} = await response.json()
+                console.log(userid)
+                await login(userid)
+                navigation.navigate('MainTab');
+                setId('');
+                setPassword('');
+                setLoginCheckLabel('');
+            }
+        } catch (error) {
+            console.error('[로그인] 서버 요청 중 오류가 발생했습니다.', error);
         }
     }
 
     const handleSignUpButton = () => {
+        setId('')
+        setPassword('')
+        setLoginCheckLabel('')
         navigation.navigate("SignUp")
     }
 
     const handleFindAuth = () => {
+        setId('')
+        setPassword('')
+        setLoginCheckLabel('')
         navigation.navigate("FindAuth")
     }
-    
+
     return (
         <SafeAreaView style={CONTAINER.container}>
             {/* App LOGO */}
@@ -87,6 +107,8 @@ const LoginScreen = () => {
                 </TouchableOpacity>
 
             </View>
+
+            <Text style={TYPOGRAPHY.smallText}>{loginCheckLabel}</Text>
 
             <TouchableOpacity
                 style={BUTTONS.second}

@@ -13,6 +13,7 @@ import MaterialIcon from "react-native-vector-icons/MaterialIcons"
 import FeatherIcon from "react-native-vector-icons/Feather"
 import { validateUsername, validateId, validatePassword } from "../../components/validateString"
 import { CONTAINER, TYPOGRAPHY, BUTTONS, COLOR, SHADOWS, BUTTON } from "../../styles/commonStyles"
+import { Server } from "@env"
 
 const SignUpScreen = () => {
     const navigation = useNavigation()
@@ -40,7 +41,7 @@ const SignUpScreen = () => {
         setConfirmPassword('')
     }
 
-    const handleCheckId = () => {
+    const handleCheckId = async () => {
         if (id == '') {
             setIdPlaceholder('아이디를 먼저 입력하세요.')
             return
@@ -49,19 +50,30 @@ const SignUpScreen = () => {
             setId('')
             return
         } else {
-            // if () {    // 존재하는 아이디인 경우
-            //     setAvailableIdText('이미 사용 중인 아이디입니다.')
-            //     setAvailableIdColor('#DB0000')
-            // } else {    // 사용 가능한 아이디인 경우
-            //     setAvailableIdText('사용 가능한 아이디입니다.')
-            //     setAvailableIdColor('#000AC9')
-            setAvailableId(true)
-            // }
+            try {
+                const response = await fetch(`${Server}/auth/check-id`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
 
+                const result = await response.json();
+                if (result.available) {
+                    setAvailableId(true);
+                    setAvailableIdText('사용 가능한 아이디입니다.');
+                    setAvailableIdColor('#000AC9');
+                } else {
+                    setAvailableId(false);
+                    setAvailableIdText('이미 사용 중인 아이디입니다.');
+                    setAvailableIdColor('#DB000');
+                }
+            } catch (error) {
+                console.error('[아이디중복확인] 서버 요청 중 오류가 발생했습니다:', error);
+            }
         }
     }
 
-    const handleSignUpButton = () => {
+    const handleSignUpButton = async () => {
         if (!username || !id || !password || !confirmPassword) {
             Alert.alert('모든 정보를 입력해주세요.')
             return
@@ -87,8 +99,23 @@ const SignUpScreen = () => {
             return
         }
 
-        navigation.navigate("Login")
-        clearAll()
+        try {
+            const response = await fetch(`${Server}/auth/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, userid: id, password })
+            });
+
+            if (response.status === 201) {
+                Alert.alert('회원가입이 완료되었습니다.');
+                navigation.navigate('Login');
+                clearAll();
+            } else {
+                Alert.alert('회원가입에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('[회원가입] 서버 요청 중 오류가 발생했습니다:', error);
+        }
     }
 
     useEffect(() => {
