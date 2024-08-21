@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     SafeAreaView,
     View,
@@ -7,10 +7,14 @@ import {
     TouchableOpacity,
     StyleSheet,
     TouchableWithoutFeedback,
-    Keyboard
+    Keyboard,
+    FlatList,
+    Image
 } from "react-native"
 import { CONTAINER, TYPOGRAPHY } from "../../styles/commonStyles"
 import Feather from "react-native-vector-icons/Feather"
+import { Server } from "@env"
+
 const SearchScreen = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResult, setSearchResult] = useState([])
@@ -21,8 +25,7 @@ const SearchScreen = () => {
     }
 
     const handleSearchButton = () => {
-        console.log('검색어:', searchQuery)
-        // 추후 검색 로직 추가 필요
+        fetchSearchResults()
     }
 
     const handleCancel = () => {
@@ -30,6 +33,33 @@ const SearchScreen = () => {
         setIsFocused(false)
         keyboardOff()
     }
+
+    const fetchSearchResults = async () => {
+        if (searchQuery.trim().length > 0) {
+            try {
+                const response = await fetch(`${Server}/user/search?query=${searchQuery}`);
+                const data = await response.json();
+                setSearchResult(data);
+            } catch (error) {
+                console.error('검색 오류:', error);
+            }
+        } else {
+            setSearchResult([]);
+        }
+    }
+
+    const renderSearchItem = ({ item }) => (
+        <TouchableOpacity>
+            <View style={styles.searchItem}>
+                <Image source={{ uri: `${Server}/${item.profile_picture}` }} style={styles.photo} />
+                <Text style={[TYPOGRAPHY.normalText, { marginLeft: 10, fontWeight: '500' }]}>{item.userid}</Text>
+            </View>
+        </TouchableOpacity>
+    )
+
+    useEffect(() => {
+        fetchSearchResults()
+    }, [searchQuery])
 
     return (
         <TouchableWithoutFeedback onPress={keyboardOff}>
@@ -53,6 +83,13 @@ const SearchScreen = () => {
                         )
                     }
                 </View>
+
+                <FlatList
+                    data={searchResult}
+                    keyExtractor={(item) => item.userid}
+                    renderItem={renderSearchItem}
+                    style={styles.searchResultList}
+                />
             </SafeAreaView>
         </TouchableWithoutFeedback>
     )
@@ -76,5 +113,20 @@ const styles = StyleSheet.create({
     },
     inputFocused: {
         width: "80%"
+    },
+    searchItem: {
+        flexDirection: 'row',
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#dddddd',
+        alignItems: 'center'
+    },
+    searchResultList: {
+        marginBottom: 10
+    },
+    photo: {
+        width: 35,
+        height: 35,
+        borderRadius: 100
     }
 })
