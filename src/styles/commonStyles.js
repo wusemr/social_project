@@ -39,7 +39,8 @@ export const TYPOGRAPHY = StyleSheet.create({
 export const CONTAINER = StyleSheet.create({
     container: {
         flex: 1,
-        margin: '3%'
+        marginHorizontal: '3%',
+        backgroundColor: '#00000020'
     },
     header: {
       flexDirection: 'row',
