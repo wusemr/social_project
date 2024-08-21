@@ -7,24 +7,70 @@ import {
     TextInput,
     StyleSheet,
     Image,
-    Modal
+    Modal,
+    Alert
 } from "react-native"
 import { CONTAINER, TYPOGRAPHY, INPUT } from "../../styles/commonStyles"
 import { useNavigation } from "@react-navigation/native"
 import Carousel from "react-native-reanimated-carousel"
+import { Server } from "@env"
+import { useUser } from "../../auth/UserContext"
 
 const PHOTO_WIDTH = 350
 const PHOTO_HEIGHT = 350
 
 const CaptionScreen = ({ route }) => {
     const navigation = useNavigation()
+    const { user } = useUser()
     const { selectedPhoto } = route.params
     const [content, setContent] = useState('')
     const [modalVisible, setModalVisible] = useState(false)
-    
-    const handleUploadButton = () => {
-        navigation.navigate("PostList")
-        setContent('')
+
+    const handleUploadButton = async () => {
+        if (selectedPhoto.length === 0) {
+            Alert.alert('업로드 실패', '업로드할 사진이 존재하지 않습니다.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('content', content);
+        formData.append('userid', user);
+
+        selectedPhoto.forEach((photoUri, index) => {
+            const photoType = photoUri.split('.').pop();
+            const mimeTypes = {
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'png': 'image/png'
+            };
+            const photoMimeType = mimeTypes[photoType] || 'image/jpeg';
+
+            formData.append('photos', {
+                uri: photoUri,
+                type: photoMimeType,
+                name: `photo-${index + 1}.${photoType}`
+            });
+        });
+
+        try {
+            const response = await fetch(`${Server}/post/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            console.log('일단 요청하긴 했어~')
+            if (!response.ok) {
+                throw new Error('서버 오류: 게시물 업로드에 실패했습니다.');
+            }
+
+            const result = await response.json();
+            console.log('게시물 업로드 성공:', result);
+            navigation.navigate('PostList');
+        } catch (error) {
+            console.error('게시물 업로드 중 오류가 발생했습니다.', error);
+        } finally {
+            setContent('');
+            setModalVisible(false);
+        }
     }
 
     const toggleModal = () => {
