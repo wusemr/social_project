@@ -6,41 +6,29 @@ import {
     Image,
     StyleSheet,
     FlatList,
-    Dimensions
+    Dimensions,
+    RefreshControl
 } from "react-native"
 import Ionicon from "react-native-vector-icons/Ionicons"
+import FontAwesome from "react-native-vector-icons/FontAwesome5"
 import { Server } from "@env"
 
 const { width } = Dimensions.get('window')
 const numColumns = 3
 const itemSize = (width - 30) / numColumns
 
-const posts = [
-    { id: '1', image: require('../images/Sample01.jpeg') },
-    { id: '2', image: require('../images/Sample02.jpeg') },
-    { id: '3', image: require('../images/Sample03.jpeg') },
-    { id: '4', image: require('../images/Sample04.jpeg') },
-    { id: '5', image: require('../images/Sample01.jpeg') },
-    { id: '6', image: require('../images/Sample01.jpeg') },
-    { id: '7', image: require('../images/Sample01.jpeg') },
-    { id: '8', image: require('../images/Sample01.jpeg') },
-    { id: '9', image: require('../images/Sample01.jpeg') },
-    { id: '10', image: require('../images/Sample01.jpeg') },
-    { id: '11', image: require('../images/Sample01.jpeg') },
-    { id: '12', image: require('../images/Sample01.jpeg') },
-    { id: '13', image: require('../images/Sample01.jpeg') },
-    { id: '14', image: require('../images/Sample01.jpeg') },
-]
-
 const ProfileFormat = (props) => {
     const { handlePressImage, userid } = props
     const [userInfo, setUserInfo] = useState(null)
+    const [post, setPost] = useState([])
+    const [isRefreshing, setIsRefreshing] = useState(false)
 
-    const renderUserInfo = async () => {
+    const fetchUserInfo = async () => {
         try {
-            const response = await fetch(`${Server}/user/get-info?userid=${userid}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
+            const response = await fetch(`${Server}/user/get-info`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userid: userid })
             });
 
             if (!response.ok) {
@@ -49,9 +37,25 @@ const ProfileFormat = (props) => {
 
             const data = await response.json();
             setUserInfo(data);
-            console.log(`현재 조회한 ${userid} 님의 정보:`, userInfo);
         } catch (error) {
             console.error('사용자 정보를 가져오는 중 오류가 발생했습니다.', error);
+        }
+    }
+
+    const fetchPosts = async () => {
+        try {
+            const response = await fetch(`${Server}/post/get-user?userid=${userid}`);
+            console.log('일단 서버 요청 시도함');
+            if (!response.ok) {
+                throw new Error('게시물 조회에 실패했습니다.');
+            }
+            const data = await response.json();
+            setPost(data);
+            console.log('머 받았냐면', data);
+        } catch (error) {
+            console.error(error.message);
+        } finally {
+            setIsRefreshing(false);
         }
     }
 
@@ -59,88 +63,138 @@ const ProfileFormat = (props) => {
         return (
             <TouchableOpacity
                 style={styles.postItem}
-                onPress={() => console.log(`Pressed post with id: ${item.id}`)}
+                onPress={() => console.log(`Pressed post with id: ${item.post_id}`)}
             >
-                <Image source={item.image} style={styles.postImage} />
+                <Image source={{ uri: `${Server}/${item.first_image_url}` }} style={styles.postImage} />
             </TouchableOpacity>
         )
     }
 
+    const refresh = () => {
+        setIsRefreshing(true)
+        fetchPosts()
+        fetchUserInfo()
+    }
+
     useEffect(() => {
         if (userid) {
-            renderUserInfo()
+            fetchUserInfo()
+            fetchPosts()
         }
     }, [userid])
 
     return (
-        <>
-            <View style={styles.profileContainer}>
-                <View style={styles.infoContainer}>
-                    <TouchableOpacity
-                        activeOpacity={0.9}
-                        onPress={handlePressImage}
-                    >
-                        <Image
-                            source={require('../images/profile.jpeg')}
-                            style={styles.profileImage}
-                        />
-                    </TouchableOpacity>
+        <FlatList
+            data={post}
+            renderItem={renderPost}
+            keyExtractor={(item) => item.post_id.toString()}
+            numColumns={numColumns}
+            contentContainerStyle={styles.postsContainer}
+            refreshControl={
+                <RefreshControl
+                    refreshing={isRefreshing}
+                    onRefresh={refresh}
+                />
+            }
+            stickyHeaderIndices={[0]}
+            ListHeaderComponent={
+                <View style={styles.profileHeaderContainer}>
+                    <View style={styles.profileContainer}>
+                        <View style={styles.infoContainer}>
+                            <TouchableOpacity
+                                activeOpacity={0.9}
+                                onPress={handlePressImage}
+                            >
+                                {
+                                    userInfo && userInfo.profile_picture ? (
+                                        <Image
+                                            source={{ uri: `${Server}/${userInfo.profile_picture}` }}
+                                            style={styles.profileImage}
+                                        />
+                                    ) : (
+                                        <View style={styles.profileImageContainer}>
+                                            <FontAwesome name="user-alt" size={50} color='#F9F9F9' />
+                                        </View>
+                                    )
+                                }
+                            </TouchableOpacity>
 
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        style={styles.infoTextContainer}
-                    >
-                        <Text style={[styles.infoText, { fontWeight: '600' }]}>{userInfo.posts_count}</Text>
-                        <Text style={styles.infoText}>게시물</Text>
-                    </TouchableOpacity>
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                style={styles.infoTextContainer}
+                            >
+                                <Text style={[styles.infoText, { fontWeight: '600' }]}>
+                                    {userInfo ? userInfo.posts_count : '로드중'}
+                                </Text>
+                                <Text style={styles.infoText}>게시물</Text>
+                            </TouchableOpacity>
 
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        style={styles.infoTextContainer}
-                    >
-                        <Text style={[styles.infoText, { fontWeight: '600' }]}>{userInfo.followers_count}</Text>
-                        <Text style={styles.infoText}>팔로워</Text>
-                    </TouchableOpacity>
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                style={styles.infoTextContainer}
+                            >
+                                <Text style={[styles.infoText, { fontWeight: '600' }]}>
+                                    {userInfo ? userInfo.followers_count : '로드중'}
+                                </Text>
+                                <Text style={styles.infoText}>팔로워</Text>
+                            </TouchableOpacity>
 
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        style={styles.infoTextContainer}
-                    >
-                        <Text style={[styles.infoText, { fontWeight: '600' }]}>{userInfo.following_count}</Text>
-                        <Text style={styles.infoText}>팔로잉</Text>
-                    </TouchableOpacity>
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                style={styles.infoTextContainer}
+                            >
+                                <Text style={[styles.infoText, { fontWeight: '600' }]}>
+                                    {userInfo ? userInfo.following_count : '로드중'}
+                                </Text>
+                                <Text style={styles.infoText}>팔로잉</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.textContainer}>
+                            <Text style={[styles.infoText, { fontWeight: 'bold' }]}>
+                                {userInfo ? userInfo.username : '이름'}
+                            </Text>
+                            {
+                                userInfo && userInfo.info_text ? (
+                                    <Text style={styles.infoText}>
+                                        {userInfo ? userInfo.info_text : '소개'}
+                                    </Text>
+                                ) : ( <></> )
+                            }
+                        </View>
+                    </View>
+
+                    <View style={styles.postTypeContainer}>
+                        <TouchableOpacity>
+                            <Ionicon name="grid" size={30} color="#555555" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
-
-                <View>
-                    <Text style={[styles.infoText, { fontWeight: 'bold' }]}>{userInfo.username}</Text>
-                    <Text style={styles.infoText}>https://blog.naver.com/wusemr2</Text>
-                </View>
-            </View>
-
-            <View style={styles.postTypeContainer}>
-                <TouchableOpacity>
-                    <Ionicon name="grid" size={30} color='#555555' />
-                </TouchableOpacity>
-
-                {/** 추후 태그, 릴스 등의 타입이 추가될 수도 있음 */}
-            </View>
-
-            <FlatList
-                data={posts}
-                renderItem={renderPost}
-                keyExtractor={(item) => item.id}
-                numColumns={3}
-                contentContainerStyle={styles.postsContainer}
-            />
-        </>
+            }
+        />
     )
 }
 
 export default ProfileFormat
 
 const styles = StyleSheet.create({
+    profileHeaderContainer: {
+        backgroundColor: '#f9f9f9',
+        margin: 0,
+        padding: 0
+    },
     profileContainer: {
-        justifyContent: 'center'
+        justifyContent: 'center',
+        margin: 0,
+        padding: '3%'
+    },
+    profileImageContainer: {
+        backgroundColor: '#00000030',
+        width: 80,
+        height: 80,
+        borderRadius: 100,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     infoContainer: {
         flexDirection: 'row',
@@ -162,13 +216,17 @@ const styles = StyleSheet.create({
         height: 100,
         width: 100
     },
+    textContainer: {
+        paddingHorizontal: '3%',
+        paddingVertical: '3%'
+    },
     postTypeContainer: {
         backgroundColor: '#00000010',
         height: 40,
         alignItems: 'center'
     },
     postsContainer: {
-        marginVertical: 5
+
     },
     postItem: {
         width: itemSize,
