@@ -41,31 +41,34 @@ const SignUpScreen = () => {
         setConfirmPassword('')
     }
 
+    // 아이디 중복 확인 함수
     const handleCheckId = async () => {
         if (id == '') {
-            setIdPlaceholder('아이디를 먼저 입력하세요.')
+            setIdPlaceholder('아이디를 먼저 입력하세요.');
+            setAvailableIdText('아이디 중복 여부를 확인해주세요.');
+            setAvailableIdColor('#AAAAAA');
             return
         } else if (!validateId(id)) {
-            setIdPlaceholder('영어, 숫자, 특수문자(._) 입력 가능')
-            setId('')
+            setIdPlaceholder('영어, 숫자, 특수문자(._) 입력 가능');
+            setId('');
             return
         } else {
             try {
                 const response = await fetch(`${Server}/auth/check-id`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
+                    body: JSON.stringify({ userid: id })
                 });
 
                 const result = await response.json();
                 if (result.available) {
                     setAvailableId(true);
-                    setAvailableIdText('사용 가능한 아이디입니다.');
                     setAvailableIdColor('#000AC9');
+                    setAvailableIdText('사용 가능한 아이디입니다.');
                 } else {
                     setAvailableId(false);
+                    setAvailableIdColor('#DB0000');
                     setAvailableIdText('이미 사용 중인 아이디입니다.');
-                    setAvailableIdColor('#DB000');
                 }
             } catch (error) {
                 console.error('[아이디중복확인] 서버 요청 중 오류가 발생했습니다:', error);
