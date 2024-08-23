@@ -14,8 +14,11 @@ import {
 import { CONTAINER, TYPOGRAPHY } from "../../styles/commonStyles"
 import Feather from "react-native-vector-icons/Feather"
 import { Server } from "@env"
+import { useNavigation } from "@react-navigation/native"
 
 const SearchScreen = () => {
+    const navigation = useNavigation()
+
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResult, setSearchResult] = useState([])
     const [isFocused, setIsFocused] = useState(false)
@@ -49,13 +52,20 @@ const SearchScreen = () => {
     }
 
     const renderSearchItem = ({ item }) => (
-        <TouchableOpacity>
+        <TouchableOpacity
+            onPress={() => goToProfile(item.userid)}
+            activeOpacity={1}
+        >
             <View style={styles.searchItem}>
                 <Image source={{ uri: `${Server}/${item.profile_picture}` }} style={styles.photo} />
                 <Text style={[TYPOGRAPHY.normalText, { marginLeft: 10, fontWeight: '500' }]}>{item.userid}</Text>
             </View>
         </TouchableOpacity>
     )
+
+    const goToProfile = (userid) => {
+        navigation.navigate('Profile', { userid })
+    }
 
     useEffect(() => {
         fetchSearchResults()
