@@ -12,16 +12,22 @@ import {
 import Ionicon from "react-native-vector-icons/Ionicons"
 import FontAwesome from "react-native-vector-icons/FontAwesome5"
 import { Server } from "@env"
+import { TYPOGRAPHY } from "../styles/commonStyles"
+import { useNavigation } from "@react-navigation/native"
 
+const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
 const numColumns = 3
 const itemSize = (width - 30) / numColumns
 
 const ProfileFormat = (props) => {
-    const { handlePressImage, userid } = props
+    const navigation = useNavigation()
+
+    const { handlePressImage, userid, isFollowable, user } = props
     const [userInfo, setUserInfo] = useState(null)
     const [post, setPost] = useState([])
     const [isRefreshing, setIsRefreshing] = useState(false)
+    const [isFollowing, setIsFollowing] = useState(false)
 
     const fetchUserInfo = async () => {
         try {
@@ -70,16 +76,72 @@ const ProfileFormat = (props) => {
         )
     }
 
+    // 팔로우 중인지 확인하는 함수
+    const checkIsFollowing = async () => {
+        try {
+            const response = await fetch(`${Server}/user/check-following`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userid: user, following_id: userid })
+            });
+
+            if (!response.ok) {
+                throw new Error('팔로우 상태를 확인하는 중 오류가 발생했습니다.');
+            }
+            const { isFollowing } = await response.json();
+            setIsFollowing(isFollowing);
+        } catch (error) {
+            console.error('팔로우 상태를 확인하는 중 오류가 발생했습니다.', error);
+        }
+    }
+
+    // 팔로우 버튼을 누르면 실행되는 함수
+    const handleFollowButton = async () => {
+        try {
+            const endpoint = isFollowing ? `${Server}/user/unfollow` : `${Server}/user/follow`;
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userid: user, following_id: userid })
+            });
+
+            if (!response.ok) {
+                throw new Error('팔로우 상태를 변경하는 중 오류가 발생했습니다.');
+            }
+
+            setIsFollowing(!isFollowing);
+            fetchUserInfo();
+        } catch (error) {
+            console.error('팔로우 상태를 변경하는 중 오류가 발생했습니다.', error);
+        }
+    }
+
+    // 팔로잉 목록 보기
+    const viewFollowingList = () => {
+        navigation.navigate('Following', { currentUser: user, targetUser: userid })
+    }
+
+    // 팔로워 목록 보기
+    const viewFollowerList = () => {
+        navigation.navigate('Follower', { currentUser: user, targetUser: userid })
+    }
+
     const refresh = () => {
         setIsRefreshing(true)
         fetchPosts()
         fetchUserInfo()
+        if (user != userid) {
+            checkIsFollowing()
+        }
     }
 
     useEffect(() => {
         if (userid) {
             fetchUserInfo()
             fetchPosts()
+            if (user != userid) {
+                checkIsFollowing()
+            }
         }
     }, [userid])
 
@@ -132,6 +194,7 @@ const ProfileFormat = (props) => {
                             <TouchableOpacity
                                 activeOpacity={1}
                                 style={styles.infoTextContainer}
+                                onPress={viewFollowerList}
                             >
                                 <Text style={[styles.infoText, { fontWeight: '600' }]}>
                                     {userInfo ? userInfo.followers_count : '로드중'}
@@ -142,6 +205,7 @@ const ProfileFormat = (props) => {
                             <TouchableOpacity
                                 activeOpacity={1}
                                 style={styles.infoTextContainer}
+                                onPress={viewFollowingList}
                             >
                                 <Text style={[styles.infoText, { fontWeight: '600' }]}>
                                     {userInfo ? userInfo.following_count : '로드중'}
@@ -159,9 +223,30 @@ const ProfileFormat = (props) => {
                                     <Text style={styles.infoText}>
                                         {userInfo ? userInfo.info_text : '소개'}
                                     </Text>
-                                ) : ( <></> )
+                                ) : (<></>)
                             }
                         </View>
+                        {
+                            isFollowable && (
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity
+                                        onPress={handleFollowButton}
+                                        style={isFollowing ? styles.cancelFollowButton : styles.followButton}
+                                    >
+                                        <Text style={[TYPOGRAPHY.buttonText, { fontSize: 16 }]}>
+                                            {isFollowing ? '팔로우 취소' : '팔로우'}
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        onPress={() => console.log('메시지 눌림')}
+                                        style={styles.messageButton}
+                                    >
+                                        <Text style={[TYPOGRAPHY.buttonText, { fontSize: 16 }]}>메시지</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )
+                        }
                     </View>
 
                     <View style={styles.postTypeContainer}>
@@ -219,6 +304,35 @@ const styles = StyleSheet.create({
     textContainer: {
         paddingHorizontal: '3%',
         paddingVertical: '3%'
+    },
+    buttonContainer: {
+        marginTop: '2%',
+        flexDirection: 'row',
+        justifyContent: 'space-around'
+    },
+    followButton: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#005DFF',
+        height: height / 25,
+        width: (width - 80) / 2,
+        borderRadius: 10
+    },
+    cancelFollowButton: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#00000040',
+        height: height / 25,
+        width: (width - 80) / 2,
+        borderRadius: 10
+    },
+    messageButton: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#00000040',
+        height: height / 25,
+        width: (width - 80) / 2,
+        borderRadius: 10
     },
     postTypeContainer: {
         backgroundColor: '#00000010',
