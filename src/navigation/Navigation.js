@@ -14,8 +14,9 @@ import CommentsScreen from "../screens/post/CommentsScreen"
 import CreatePostScreen from "../screens/post/CreatePostScreen"
 import LikeListScreen from "../screens/post/LikeListScreen"
 import PostListScreen from "../screens/post/PostListScreen"
-import ProfileScreen from "../screens/profile/ProfileScreen"
+import MyProfileScreen from "../screens/profile/MyProfileScreen"
 import SearchScreen from "../screens/profile/SearchScreen"
+import ProfileScreen from "../screens/profile/ProfileScreen"
 import SettingScreen from "../screens/settings/SettingScreen"
 import CaptionScreen from "../screens/post/CaptionScreen"
 
@@ -86,8 +87,8 @@ const MainTab = () => {
             />
 
             <Tab.Screen
-                name="Profile"
-                component={ProfileScreen}
+                name="MyProfile"
+                component={MyProfileScreen}
                 options={({ route }) => ({
                     tabBarIcon: ({ color, size, focused }) => (
                         <Feather
@@ -115,6 +116,7 @@ const Navigation = () => {
             <Stack.Screen name="Notification" component={NotificationScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Follower" component={FollowerScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Following" component={FollowingScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Comments" component={CommentsScreen} options={{ headerShown: false }} />
             <Stack.Screen name="LikeList" component={LikeListScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Setting" component={SettingScreen} options={{ headerShown: false }} />
