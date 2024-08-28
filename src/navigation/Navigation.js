@@ -19,6 +19,7 @@ import SearchScreen from "../screens/profile/SearchScreen"
 import ProfileScreen from "../screens/profile/ProfileScreen"
 import SettingScreen from "../screens/settings/SettingScreen"
 import CaptionScreen from "../screens/post/CaptionScreen"
+import PostScreen from "../screens/post/PostScreen"
 
 const Stack = createStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -120,6 +121,7 @@ const Navigation = () => {
             <Stack.Screen name="Comments" component={CommentsScreen} options={{ headerShown: false }} />
             <Stack.Screen name="LikeList" component={LikeListScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Setting" component={SettingScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Post" component={PostScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
     )
 }
