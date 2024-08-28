@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import {
     SafeAreaView,
     View,
@@ -6,80 +7,70 @@ import {
 } from "react-native"
 import { CONTAINER, TYPOGRAPHY } from "../../styles/commonStyles"
 import Notification from "../../components/Notification"
-
-const notifications = [
-    {
-        id: '1',
-        image: require('../../images/Sample01.jpeg'),
-        content: '알림 내용 1입니다.',
-        time: '30분 전'
-    },
-    {
-        id: '2',
-        image: require('../../images/Sample02.jpeg'),
-        content: '알림 내용 2입니다.',
-        time: '1시간 전'
-    },
-    {
-        id: '3',
-        image: require('../../images/Sample03.jpeg'),
-        content: '알림 내용 3입니다.',
-        time: '1시간 전'
-    },
-    {
-        id: '4',
-        image: require('../../images/Sample01.jpeg'),
-        content: '알림 내용 4입니다.',
-        time: '2시간 전'
-    },
-    {
-        id: '5',
-        image: require('../../images/Sample04.jpeg'),
-        content: '알림 내용 5입니다.',
-        time: '3시간 전'
-    },
-    {
-        id: '6',
-        image: require('../../images/Sample03.jpeg'),
-        content: '알림 내용 6입니다.',
-        time: '3시간 전'
-    },
-    {
-        id: '7',
-        image: require('../../images/Sample02.jpeg'),
-        content: '알림 내용 7입니다.',
-        time: '6시간 전'
-    },
-    {
-        id: '8',
-        image: require('../../images/Sample01.jpeg'),
-        content: '알림 내용 8입니다.',
-        time: '12시간 전'
-    },
-    {
-        id: '9',
-        image: require('../../images/Sample01.jpeg'),
-        content: '알림 내용 9입니다.',
-        time: '1일 전'
-    },
-    {
-        id: '10',
-        image: require('../../images/Sample01.jpeg'),
-        content: '알림 내용 10입니다.',
-        time: '2일 전'
-    },
-]
+import { Server } from "@env"
+import { useUser } from "../../auth/UserContext"
+import { useNavigation } from "@react-navigation/native"
 
 const NotificationScreen = () => {
-    const renderNotification = ({item}) => {
+    const { user } = useUser()
+    const [notifications, setNotifications] = useState([])
+    const navigation = useNavigation()
+
+    const fetchNotification = async () => {
+        try {
+            const response = await fetch(`${Server}/notification/get-list?userId=${user}`);
+            const data = await response.json();
+            console.log('알림이 온게 뭐냐면', data);
+            setNotifications(data);
+        } catch (error) {
+            console.error('알림을 불러오는 중 오류가 발생했습니다.', error);
+        }
+    }
+
+    const renderNotification = ({ item }) => {
         return (
             <Notification
-                image={item.image}
-                content={item.content}
+                actor_id={item.actor_id}
+                actor_userid={item.actor_userid}
+                actor_username={item.actor_username}
+                actor_profile_picture={{ uri: item.actor_profile_picture }}
+                post_id={item.post_id}
+                comment_id={item.comment_id}
+                message={item.message}
                 time={item.time}
+                type={item.type}
+                sub_type={item.sub_type}
+                is_read={item.is_read}
+                onNotificationPress={() => onNotificationPress(item)}
             />
         )
-    }    
+    }
+
+    const onNotificationPress = (item) => {
+        const { type, sub_type, post_id, comment_id, actor_userid } = item
+
+        switch (`${type}_${sub_type}`) {
+            case 'follow_profile':
+                navigation.navigate('Profile', { userid: actor_userid })
+                break;
+            case 'like_post':
+                navigation.navigate('Post', { currentUser: user, post_id })
+                break;
+            case 'comment_post':
+            case 'comment_reply':
+                navigation.navigate('Post', { post_id, comment_id })
+                break;
+            case 'like_comment':
+                navigation.navigate('Post', { post_id, comment_id })
+                break
+            default:
+                console.log('알 수 없는 알림 유형입니다:', type, sub_type)
+        }
+    }
+
+    useEffect(() => {
+        fetchNotification()
+    }, [user])
 
     return (
         <SafeAreaView style={CONTAINER.container}>
