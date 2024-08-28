@@ -40,7 +40,6 @@ export const CONTAINER = StyleSheet.create({
     container: {
         flex: 1,
         marginHorizontal: '3%',
-        backgroundColor: '#00000020'
     },
     header: {
       flexDirection: 'row',
