@@ -13,6 +13,7 @@ const FollowingScreen = ({ route }) => {
     const { currentUser, targetUser } = route.params
     const [followingList, setFollowingList] = useState([])
 
+    // 팔로잉 목록 불러오기
     const fetchFollowingList = async () => {
         try {
             const response = await fetch(`${Server}/user/get-list/following?currentUser=${currentUser}&targetUser=${targetUser}`, {
@@ -31,8 +32,10 @@ const FollowingScreen = ({ route }) => {
         }
     }
 
+    // 팔로잉 목록의 각 항목 렌더링
     const renderItem = ({ item }) => (
         <FollowListItem
+            currentUser={currentUser}
             profile_picture={item.profile_picture}
             username={item.username}
             userid={item.userid}
@@ -41,8 +44,9 @@ const FollowingScreen = ({ route }) => {
         />
     )
 
+    // 팔로우&팔로잉 버튼 클릭 시 실행되는 함수
     const handleFollowButton = async (userid, isFollowing) => {
-        const target = userid
+        const target = userid;
 
         try {
             const endpoint = isFollowing ? `${Server}/user/unfollow` : `${Server}/user/follow`;
@@ -62,6 +66,7 @@ const FollowingScreen = ({ route }) => {
         }
     }
 
+    // 타겟 유저가 바뀔 때마다 호출
     useEffect(() => {
         fetchFollowingList()
     }, [targetUser])
@@ -72,7 +77,7 @@ const FollowingScreen = ({ route }) => {
                 <Text style={TYPOGRAPHY.bigText}>팔로우</Text>
             </View>
 
-            <View style={{flex: 1}}>
+            <View style={{ flex: 1 }}>
                 <FlatList
                     data={followingList}
                     renderItem={renderItem}

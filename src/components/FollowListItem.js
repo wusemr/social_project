@@ -8,13 +8,12 @@ import {
 } from "react-native"
 import { Server } from "@env"
 import { TYPOGRAPHY } from "../styles/commonStyles"
-import { toEditorSettings } from "typescript"
 
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
 
 const FollowListItem = (props) => {
-    const { profile_picture, username, userid, isFollowing, onFollowToggle } = props
+    const { currentUser, profile_picture, username, userid, isFollowing, onFollowToggle } = props
 
     return (
         <View style={styles.item}>
@@ -29,14 +28,18 @@ const FollowListItem = (props) => {
                 </View>
             </TouchableOpacity>
 
-            <TouchableOpacity
-                style={[styles.followButton, isFollowing ? styles.following : styles.notFollowing]}
-                onPress={onFollowToggle}
-            >
-                <Text style={TYPOGRAPHY.buttonText}>
-                    {isFollowing ? '팔로잉' : '팔로우'}
-                </Text>
-            </TouchableOpacity>
+            {
+                currentUser !== userid && (
+                    <TouchableOpacity
+                        style={[styles.followButton, isFollowing ? styles.following : styles.notFollowing]}
+                        onPress={onFollowToggle}
+                    >
+                        <Text style={TYPOGRAPHY.buttonText}>
+                            {isFollowing ? '팔로잉' : '팔로우'}
+                        </Text>
+                    </TouchableOpacity>
+                )
+            }
         </View>
     )
 }
@@ -72,9 +75,9 @@ const styles = StyleSheet.create({
         borderRadius: 10
     },
     following: {
-        backgroundColor: '#005DFF'
+        backgroundColor: '#00000040'
     },
     notFollowing: {
-        backgroundColor: '#00000040'
+        backgroundColor: '#005DFF'
     }
 })
