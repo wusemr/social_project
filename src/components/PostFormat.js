@@ -4,26 +4,36 @@ import {
     Text,
     TouchableOpacity,
     Image,
-    StyleSheet
+    StyleSheet,
+    Dimensions
 } from "react-native"
 import Carousel from "react-native-reanimated-carousel"
-import AntIcon from "react-native-vector-icons/AntDesign"
+import Octicon from "react-native-vector-icons/Octicons"
+import Feather from "react-native-vector-icons/Octicons"
+import { Server } from "@env"
 
-const PHOTO_WIDTH = 300
-const PHOTO_HEIGHT = 300
+const { height } = Dimensions.get('screen')
+const { width } = Dimensions.get('window')
+const PHOTO_WIDTH = width - (width / 10)
+const PHOTO_HEIGHT = width - (width / 10)
 
 const PostFormat = (
     {
-        profilePic = require('../images/profile.jpeg'),
-        nickname = '김젼득',
-        postImages = [require('../images/Sample01.jpeg'), require('../images/Sample02.jpeg'), require('../images/Sample03.jpeg'), require('../images/Sample04.jpeg')],
-        likeCount = 13042,
-        caption = '아 진짜 아무것도 하기싫다 정말정말루야호',
-        commentCount = 24
+        profilePic,
+        userid,
+        postImages,
+        likeCount,
+        caption,
+        commentCount,
+        postId,
+        handleLike,
+        isLiked,
+        viewLikeList,
+        goToProfile
     }) => {
 
     const [likes, setLikes] = useState(likeCount)
-    const [liked, setLiked] = useState(false)
+    const [liked, setLiked] = useState(isLiked)
     const [activeIndex, setActiveIndex] = useState(0)
 
     const formatLikes = (count) => {
@@ -33,7 +43,8 @@ const PostFormat = (
         return count.toString()
     }
 
-    const handleLike = () => {
+    const handleLikeButton = () => {
+        handleLike(postId)
         setLiked(!liked)
         setLikes(liked ? likes - 1 : likes + 1)
     }
@@ -42,12 +53,17 @@ const PostFormat = (
         console.log('모든 댓글을 불러오는 중입니다...')
     }
 
+    const handleViewLikeButton = () => {
+        viewLikeList(postId)
+    }
+
     const renderDots = () => {
         return (
             <View style={styles.dotsContainer}>
                 {
                     postImages.map((_, index) => (
                         <View
+                            key={index}
                             style={[
                                 styles.dot,
                                 index === activeIndex ? styles.activeDot : null
@@ -59,17 +75,25 @@ const PostFormat = (
         )
     }
 
+    useEffect(() => {
+        setLiked(isLiked)
+    }, [isLiked])
+
     return (
         <View style={styles.postContainer}>
             <TouchableOpacity
                 activeOpacity={1}
                 style={styles.postHeader}
+                onPress={goToProfile}
             >
-                <Image source={profilePic} style={styles.profilePic} />
-                <Text style={styles.nickname}>{nickname}</Text>
+                <Image
+                    source={{ uri: `${Server}/${profilePic.uri}` }}
+                    style={styles.profilePic}
+                />
+                <Text style={[styles.textSize, styles.boldText]}>{userid}</Text>
             </TouchableOpacity>
 
-            <View style={{ alignItems: 'center' }}>
+            <View style={{ alignItems: 'center', height: PHOTO_WIDTH }}>
                 <Carousel
                     width={PHOTO_WIDTH}
                     height={PHOTO_HEIGHT}
@@ -79,36 +103,52 @@ const PostFormat = (
                     scrollAnimationDuration={600}
                     onSnapToItem={(index) => setActiveIndex(index)}
                     renderItem={({ item }) => (
-                        <Image source={item} style={styles.postImage} />
+                        <Image
+                            source={{ uri: `${Server}/${item.uri}` }}
+                            style={styles.postImage}
+                        />
                     )}
                 />
-                {renderDots()}
             </View>
+            {renderDots()}
 
             <View style={styles.actions}>
-                <TouchableOpacity onPress={handleLike} style={{ marginRight: 10 }}>
-                    <AntIcon
-                        name={liked ? 'heart' : 'hearto'}
+                <TouchableOpacity onPress={handleLikeButton} style={{ marginRight: 10 }}>
+                    <Octicon
+                        name={liked ? 'heart-fill' : 'heart'}
                         size={24}
-                        color={liked ? 'red' : '#777777'}
+                        color={liked ? 'red' : '#666666'}
                     />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleViewComments}>
-                    <AntIcon name='message1' size={24} color='#777777' />
+                    <Feather name='comment' size={24} color='#666666' />
                 </TouchableOpacity>
             </View>
 
-            <Text>좋아요 {formatLikes(likes)}개</Text>
+            <TouchableOpacity
+                onPress={handleViewLikeButton}
+                activeOpacity={1}
+            >
+                <Text style={[styles.textSize, styles.boldText]}>
+                    좋아요 {formatLikes(likes)}개
+                </Text>
+            </TouchableOpacity>
 
             <View style={styles.captionContainer}>
-                <Text style={styles.boldText}>{nickname}</Text>
-                <Text style={styles.caption}>{caption}</Text>
+                <TouchableOpacity onPress={goToProfile} activeOpacity={1}>
+                    <Text style={[styles.textSize, styles.boldText]}>{userid}</Text>
+                </TouchableOpacity>
+                <Text style={styles.textSize}>{caption}</Text>
             </View>
 
-            <TouchableOpacity onPress={handleViewComments}>
-                <Text style={styles.viewComments}>댓글 {commentCount}개 모두 보기</Text>
-            </TouchableOpacity>
+            {
+                commentCount !== 0 && (
+                    <TouchableOpacity onPress={handleViewComments}>
+                        <Text style={styles.viewComments}>댓글 {commentCount}개 모두 보기</Text>
+                    </TouchableOpacity>
+                )
+            }
         </View>
     )
 }
@@ -133,9 +173,12 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginRight: 10
     },
-    nickname: {
-        fontWeight: "bold",
+    textSize: {
         fontSize: 16
+    },
+    boldText: {
+        fontWeight: '700',
+        color: '#333333'
     },
     postImage: {
         width: PHOTO_WIDTH,
@@ -143,7 +186,7 @@ const styles = StyleSheet.create({
     },
     actions: {
         flexDirection: "row",
-        padding: 10
+        padding: 10,
     },
     likeCount: {
         fontWeight: "bold",
@@ -156,16 +199,13 @@ const styles = StyleSheet.create({
     captionContainer: {
         flexDirection: 'row'
     },
-    boldText: {
-        fontWeight: "bold"
-    },
     viewComments: {
         color: "#888",
         paddingLeft: 10,
         paddingRight: 10
     },
     dotsContainer: {
-        marginTop: 310,
+        marginTop: 5,
         flexDirection: 'row',
         justifyContent: 'center'
     },
