@@ -6,29 +6,35 @@ import {
 	TouchableOpacity,
 	TextInput,
 	FlatList,
-	StyleSheet
+	StyleSheet,
+	Image,
+	Dimensions
 } from "react-native"
-import { CONTAINER } from "../../styles/commonStyles"
+import { CONTAINER, TYPOGRAPHY } from "../../styles/commonStyles"
 import { UserMessage } from "../../components/Message"
 import { OtherMessage } from "../../components/Message"
 import { useNavigation } from "@react-navigation/native"
+import Octicons from "react-native-vector-icons/Octicons"
 import { Server } from "@env"
 
-const ChatScreen = ({ route, currentUser }) => {
-	const { chatId, otherUser, otherUserProfile } = route.params
+const { width } = Dimensions.get('screen')
+
+const ChatScreen = ({ route }) => {
+	const { chatId, currentUserId, currentUser, otherUser, other_profile_picture } = route.params
 	const [messages, setMessages] = useState([])
 	const [newMessage, setNewMessage] = useState('')
 	const navigation = useNavigation()
 
-	const fetchMessages = async (chatId) => {
+	const fetchMessages = async () => {
+		console.log('ㅈ;금채팅방 아이디 이건데', chatId);
 		try {
 			const response = await fetch(`${Server}/chat/get-message/${chatId}`);
 			const data = await response.json();
 
-			if (messages.length === 0) {
+			if (data.length === 0) {
 				console.log('메시지가 없습니다.');
 			} else {
-				console.log('메시지~',data);
+				console.log('메시지~', data);
 				setMessages(data);
 			}
 		} catch (error) {
@@ -38,6 +44,7 @@ const ChatScreen = ({ route, currentUser }) => {
 
 	const handleSend = async () => {
 		try {
+			console.log('나는', currentUser);
 			const response = await fetch(`${Server}/chat/send-message`, {
 				method: 'POST',
 				headers: {
@@ -62,7 +69,7 @@ const ChatScreen = ({ route, currentUser }) => {
 	}
 
 	const renderItem = ({ item }) => {
-		if (item.sender_id === currentUser) {
+		if (item.sender_id === currentUserId) {
 			return <UserMessage message={item.message_text} />
 		} else {
 			return <OtherMessage message={item.message_text} />
@@ -75,6 +82,25 @@ const ChatScreen = ({ route, currentUser }) => {
 
 	return (
 		<SafeAreaView style={CONTAINER.container}>
+			<View style={CONTAINER.header}>
+				<TouchableOpacity
+					onPress={() => navigation.goBack()}
+					style={styles.backButton}
+				>
+					<Octicons name="chevron-left" size={24} color='#555555' />
+				</TouchableOpacity>
+				
+				<TouchableOpacity
+					onPress={() => navigation.navigate('Profile', { userid: otherUser })}
+					style={styles.headerContainer}
+				>
+					<Image
+						source={{ uri: `${Server}/${other_profile_picture}` }}
+						style={styles.profileImage}
+					/>
+					<Text style={TYPOGRAPHY.boldText}>{otherUser}</Text>
+				</TouchableOpacity>
+			</View>
 			{
 				messages.length === 0 ? (
 					<View style={styles.noMessagesContainer}>
@@ -117,6 +143,19 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: '#F5F5F5',
 		padding: 10,
+	},
+	backButton: {
+		marginHorizontal: 10
+	},
+	headerContainer: {
+		flexDirection: 'row',
+		alignItems: 'center'
+	},
+	profileImage: {
+		width: width / 10,
+		height: width / 10,
+		borderRadius: 100,
+		marginRight: 10,
 	},
 	messageContainer: {
 		paddingBottom: 80,
