@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
     SafeAreaView,
     View,
@@ -11,10 +11,12 @@ import {
 import Feather from "react-native-vector-icons/Feather"
 import Octicons from "react-native-vector-icons/Octicons"
 import { CONTAINER, TYPOGRAPHY } from "../../styles/commonStyles"
-import { useNavigation } from "@react-navigation/native"
+import { useFocusEffect, useNavigation } from "@react-navigation/native"
 import PostFormat from "../../components/PostFormat"
 import { Server } from "@env"
 import { useUser } from "../../auth/UserContext"
+import BottomSheet from "@gorhom/bottom-sheet"
+import CommentScreen from "./CommentScreen"
 
 const PostListScreen = () => {
     const navigation = useNavigation()
@@ -23,13 +25,30 @@ const PostListScreen = () => {
     const [posts, setPosts] = useState()
     const [loading, setLoading] = useState(true)
     const [isRefreshing, setIsRefreshing] = useState(false)
+    const [commentVisible, setCommentVisible] = useState(false)
+    const [selectedPostId, setSelectedPostId] = useState(null)
+    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0)
+
+    const bottomSheetRef = useRef(null)
+    const snapPoints = useMemo(() => ['60%'], [])
 
     const handleNotificationButton = () => {
         navigation.navigate("Notification")
     }
 
-    const handleDirectButton = () => {
-        navigation.navigate("ChatList")
+    const handleDirectButton = (currentUser) => {
+        navigation.navigate("ChatList", { currentUser })
+    }
+
+    const fetchNotifications = async () => {
+        try {
+            const response = await fetch(`${Server}/notification/get-list?userId=${user}`);
+            const data = await response.json()
+            const unreadCount = data.filter(notification => !notification.is_read).length;
+            setUnreadNotificationCount(unreadCount);
+        } catch (error) {
+            console.error('알림 데이터를 불러오는 중 오류가 발생했습니다.', error);
+        }
     }
 
     const renderItem = ({ item }) => (
@@ -45,6 +64,7 @@ const PostListScreen = () => {
             isLiked={item.isLiked}
             viewLikeList={() => viewLikeList(item.post_id)}
             goToProfile={() => goToProfile(item.userid)}
+            viewComments={() => handleOpenComments(item.post_id)}
         />
     )
 
@@ -107,6 +127,19 @@ const PostListScreen = () => {
         }
     }
 
+    const handleOpenComments = (postId) => {
+        setSelectedPostId(postId)
+        setCommentVisible(true)
+        bottomSheetRef.current?.snapToIndex(0)
+    }
+
+    const handleSheetChanges = useCallback((index) => {
+        if (index === -1) {
+            setCommentVisible(false)
+            setSelectedPostId(null)
+        }
+    }, [])
+
     const goToProfile = (userid) => {
         navigation.navigate('Profile', { userid })
     }
@@ -116,22 +149,40 @@ const PostListScreen = () => {
         fetchPosts()
     }
 
+    useFocusEffect(
+        useCallback(() => {
+            fetchNotifications()
+        }, [])
+    )
+
     useEffect(() => {
         fetchPosts()
+        fetchNotifications()
     }, [])
 
     return (
         <SafeAreaView style={CONTAINER.container}>
             <View style={CONTAINER.header}>
                 <Text style={TYPOGRAPHY.bigText}>포스트</Text>
-                <TouchableOpacity
-                    onPress={handleNotificationButton}
-                >
-                    <Octicons name="heart" size={26} color="#333333" />
-                </TouchableOpacity>
+                <View style={styles.badgeContainer}>
+                    <TouchableOpacity
+                        onPress={handleNotificationButton}
+                    >
+                        <Octicons name="heart" size={26} color="#333333" />
+                        {
+                            unreadNotificationCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>
+                                        {unreadNotificationCount}
+                                    </Text>
+                                </View>
+                            )
+                        }
+                    </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity
-                    onPress={handleDirectButton}
+                    onPress={() => handleDirectButton(user)}
                 >
                     <Feather name="send" size={26} color="#333333" />
                 </TouchableOpacity>
@@ -154,6 +205,20 @@ const PostListScreen = () => {
                     />
                 )
             }
+
+            <BottomSheet
+                ref={bottomSheetRef}
+                index={commentVisible ? 0 : -1}
+                snapPoints={snapPoints}
+                onChange={handleSheetChanges}
+                enablePanDownToClose={true}
+            >
+                {
+                    selectedPostId && (
+                        <CommentScreen currentUser={user} postId={selectedPostId} />
+                    )
+                }
+            </BottomSheet>
         </SafeAreaView>
     )
 }
@@ -161,5 +226,25 @@ const PostListScreen = () => {
 export default PostListScreen
 
 const styles = StyleSheet.create({
-
+    badgeContainer: {
+        position: 'relative'
+    },
+    badge: {
+        position: 'absolute',
+        top: -5,
+        right: -8,
+        borderRadius: 10,
+        paddingHorizontal: 7,
+        paddingVertical: 2,
+        minWidth: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#E80000'
+    },
+    badgeText: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+        textAlign: 'center'
+    }
 })

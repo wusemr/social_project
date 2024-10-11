@@ -29,7 +29,8 @@ const PostFormat = (
         handleLike,
         isLiked,
         viewLikeList,
-        goToProfile
+        goToProfile,
+        viewComments
     }) => {
 
     const [likes, setLikes] = useState(likeCount)
@@ -50,7 +51,7 @@ const PostFormat = (
     }
 
     const handleViewComments = () => {
-        console.log('모든 댓글을 불러오는 중입니다...')
+        viewComments()
     }
 
     const handleViewLikeButton = () => {

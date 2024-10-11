@@ -23,7 +23,7 @@ const itemSize = (width - 30) / numColumns
 const ProfileFormat = (props) => {
     const navigation = useNavigation()
 
-    const { handlePressImage, userid, isFollowable, user } = props
+    const { handlePressImage, userid, isFollowable, user, refreshProfile, setRefreshProfile } = props
     const [userInfo, setUserInfo] = useState(null)
     const [post, setPost] = useState([])
     const [isRefreshing, setIsRefreshing] = useState(false)
@@ -45,6 +45,8 @@ const ProfileFormat = (props) => {
             setUserInfo(data);
         } catch (error) {
             console.error('사용자 정보를 가져오는 중 오류가 발생했습니다.', error);
+        } finally {
+            setRefreshProfile(false);
         }
     }
 
@@ -69,9 +71,17 @@ const ProfileFormat = (props) => {
         return (
             <TouchableOpacity
                 style={styles.postItem}
-                onPress={() => console.log(`Pressed post with id: ${item.post_id}`)}
+                onPress={() => {
+                    navigation.navigate('Post', {
+                        currentUser: user,
+                        post_id: item.post_id
+                    })
+                }}
             >
-                <Image source={{ uri: `${Server}/${item.first_image_url}` }} style={styles.postImage} />
+                <Image
+                    source={{ uri: `${Server}/${item.first_image_url}` }}
+                    style={styles.postImage}
+                />
             </TouchableOpacity>
         )
     }
@@ -144,6 +154,12 @@ const ProfileFormat = (props) => {
             }
         }
     }, [userid])
+
+    useEffect(() => {
+        if (refreshProfile) {
+            fetchUserInfo()
+        }
+    }, [])
 
     return (
         <FlatList

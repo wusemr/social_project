@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
     SafeAreaView,
     View,
     Text,
     StyleSheet,
-    Image
+    Image,
+    Modal,
 } from "react-native"
 import PostFormat from "../../components/PostFormat"
 import { CONTAINER, TYPOGRAPHY } from "../../styles/commonStyles"
 import Octicons from 'react-native-vector-icons/Octicons'
 import { Server } from "@env"
 import { useNavigation } from "@react-navigation/native"
+import CommentScreen from "./CommentScreen"
+import BottomSheet from "@gorhom/bottom-sheet"
 
 const PostScreen = ({ route }) => {
     const navigation = useNavigation()
@@ -18,6 +21,26 @@ const PostScreen = ({ route }) => {
     const { currentUser, post_id } = route.params
     const [post, setPost] = useState(null)
     const [liked, setLiked] = useState(false)
+
+    const bottomSheetRef = useRef(null)
+    const snapPoints = useMemo(() => ['70%'], [])
+
+    const [commentVisible, setCommentVisible] = useState(false)
+
+    const handleSheetChanges = useCallback((index) => {
+        if (index === -1) {
+            setCommentVisible(false)
+        }
+    }, [])
+
+    const handleOpenComments = () => {
+        setCommentVisible(true)
+        bottomSheetRef.current?.snapToIndex(0)
+    }
+
+    const handleCloseComments = () => {
+        bottomSheetRef.current?.close()
+    }
 
     const fetchPost = async () => {
         try {
@@ -113,9 +136,21 @@ const PostScreen = ({ route }) => {
                         isLiked={post.isLiked}
                         viewLikeList={() => viewLikeList(post.post_id)}
                         goToProfile={() => goToProfile(post.userid)}
+                        viewComments={handleOpenComments}
                     />
                 )
             }
+
+            <BottomSheet
+                ref={bottomSheetRef}
+                index={commentVisible ? 0 : -1}
+                snapPoints={snapPoints}
+                onChange={handleSheetChanges}
+                enablePanDownToClose={true}
+            >
+                <CommentScreen currentUser={currentUser} postId={post_id} />
+            </BottomSheet>
+
         </SafeAreaView>
     )
 }

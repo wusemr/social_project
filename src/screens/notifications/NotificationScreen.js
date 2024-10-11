@@ -27,6 +27,30 @@ const NotificationScreen = () => {
         }
     }
 
+    const markNotificationsAsRead = async (unreadNotificationIds) => {
+        try {
+            await fetch(`${Server}/notification/mark-as-read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ notificationIds: unreadNotificationIds })
+            });
+        } catch (error) {
+            console.error('알림 읽음 처리 중 오류가 발생했습니다.', error);
+        }
+    }
+
+    const handleNotificationsRead = () => {
+        const unreadNotificationIds = notifications
+            .filter(notification => !notification.is_read)
+            .map(notification => notification.id)
+
+        if (unreadNotificationIds.length > 0) {
+            markNotificationsAsRead(unreadNotificationIds)
+        }
+    }
+
     const renderNotification = ({ item }) => {
         return (
             <Notification
@@ -71,6 +95,10 @@ const NotificationScreen = () => {
     useEffect(() => {
         fetchNotification()
     }, [user])
+
+    useEffect(() => {
+        handleNotificationsRead()
+    }, [notifications])
 
     return (
         <SafeAreaView style={CONTAINER.container}>
