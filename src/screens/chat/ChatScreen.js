@@ -54,6 +54,7 @@ const ChatScreen = ({ route, currentUser }) => {
 				const newMessageData = await response.json();
 				setMessages([...messages, newMessageData]);
 				setNewMessage('');
+				fetchMessages();
 			}
 		} catch (error) {
 			console.error('메시지 전송 중 오류가 발생했습니다.', error);

@@ -43,6 +43,7 @@ const ChatListScreen = ({ route }) => {
 
     const createChat = async (otherUserId) => {
         try {
+            console.log('지금 나는', currentUser, '이고, 대화 상대는', otherUserId)
             const response = await fetch(`${Server}/chat/create-room`, {
                 method: 'POST',
                 headers: {
@@ -52,6 +53,7 @@ const ChatListScreen = ({ route }) => {
             });
 
             const newChat = await response.json();
+            console.log('채팅 아이디는 이거얌', newChat.id);
 
             if (response.status === 400) {
                 navigation.navigate('Chat', { chatId: newChat.id, otherUser: otherUserId });
@@ -71,15 +73,15 @@ const ChatListScreen = ({ route }) => {
     const renderChatList = ({ item }) => (
         <TouchableOpacity
             style={styles.chatItem}
-            onPress={() => navigation.navigate('Chat', { chatId: item.id, otherUser: item.other_userid, otherUserProfile: item.other_profile_picture })}
+            onPress={() => navigation.navigate('Chat', { chatId: item.id, otherUser: item.user2_userid, other_profile_picture: item.user2_profile_picture })}
         >
             <Image
-                source={{ uri: `${Server}/${item.other_profile_picture}` }}
+                source={{ uri: `${Server}/${item.user2_profile_picture}` }}
                 style={styles.profileImage}
             />
             <View style={styles.chatInfo}>
-                <Text style={styles.userid}>{item.userid}</Text>
-                <Text style={styles.message}>{item.last_message}</Text>
+                <Text style={styles.userid}>{item.user2_userid}</Text>
+                {/* <Text style={styles.message}>{item.last_message}</Text> */}
             </View>
         </TouchableOpacity>
     )
@@ -116,7 +118,7 @@ const ChatListScreen = ({ route }) => {
                     <FlatList
                         data={chatList}
                         renderItem={renderChatList}
-                        keyExtractor={(item) => item.chat_id.toString()}
+                        keyExtractor={(item) => item.id.toString()}
                         ItemSeparatorComponent={() => <View style={styles.separator} />}
                     />
                 )
