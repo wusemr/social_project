@@ -73,14 +73,21 @@ const ChatListScreen = ({ route }) => {
     const renderChatList = ({ item }) => (
         <TouchableOpacity
             style={styles.chatItem}
-            onPress={() => navigation.navigate('Chat', { chatId: item.id, otherUser: item.user2_userid, other_profile_picture: item.user2_profile_picture })}
+            onPress={() => navigation.navigate('Chat',
+                {
+                    chatId: item.id,
+                    currentUserId: item.current_user_id,
+                    currentUser: currentUser,
+                    otherUser: item.other_user_id,
+                    other_profile_picture: item.other_user_profile_picture
+                })}
         >
             <Image
-                source={{ uri: `${Server}/${item.user2_profile_picture}` }}
+                source={{ uri: `${Server}/${item.other_user_profile_picture}` }}
                 style={styles.profileImage}
             />
             <View style={styles.chatInfo}>
-                <Text style={styles.userid}>{item.user2_userid}</Text>
+                <Text style={styles.userid}>{item.other_user_id}</Text>
                 {/* <Text style={styles.message}>{item.last_message}</Text> */}
             </View>
         </TouchableOpacity>
