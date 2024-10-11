@@ -32,14 +32,17 @@ const PostListScreen = () => {
     const bottomSheetRef = useRef(null)
     const snapPoints = useMemo(() => ['60%'], [])
 
+    // 알림 목록 화면으로 전환
     const handleNotificationButton = () => {
         navigation.navigate("Notification")
     }
 
+    // 디엠 목록 화면으로 전환
     const handleDirectButton = (currentUser) => {
         navigation.navigate("ChatList", { currentUser })
     }
 
+    // 알림 불러오기
     const fetchNotifications = async () => {
         try {
             const response = await fetch(`${Server}/notification/get-list?userId=${user}`);
@@ -51,6 +54,7 @@ const PostListScreen = () => {
         }
     }
 
+    // 조회한 전체 게시물 렌더 -- PostFormat에 props로 넘겨줌
     const renderItem = ({ item }) => (
         <PostFormat
             profilePic={{ uri: item.profile_picture }}
@@ -68,6 +72,7 @@ const PostListScreen = () => {
         />
     )
 
+    // 전체 게시물 불러오기
     const fetchPosts = async () => {
         try {
             const response = await fetch(`${Server}/post/get-following?currentUser=${user}`);
@@ -81,6 +86,7 @@ const PostListScreen = () => {
         }
     }
 
+    // 좋아요 및 좋아요 취소
     const handleLike = async (postId) => {
         try {
             const response = await fetch(`${Server}/post/like`, {
@@ -111,6 +117,7 @@ const PostListScreen = () => {
         }
     }
 
+    // 좋아요 리스트 출력
     const viewLikeList = async (postId) => {
         try {
             const response = await fetch(`${Server}/user/get-list/like?postId=${postId}&currentUser=${user}`);
@@ -127,12 +134,14 @@ const PostListScreen = () => {
         }
     }
 
+    // 댓글창 열기
     const handleOpenComments = (postId) => {
         setSelectedPostId(postId)
         setCommentVisible(true)
         bottomSheetRef.current?.snapToIndex(0)
     }
 
+    // 댓글창 높이 감지해서 열고 닫기
     const handleSheetChanges = useCallback((index) => {
         if (index === -1) {
             setCommentVisible(false)
@@ -140,10 +149,12 @@ const PostListScreen = () => {
         }
     }, [])
 
+    // 특정 사용자의 프로필 화면으로 전환
     const goToProfile = (userid) => {
         navigation.navigate('Profile', { userid })
     }
 
+    // 새로고침
     const refresh = () => {
         setIsRefreshing(true)
         fetchPosts()
