@@ -14,6 +14,7 @@ import FontAwesome from "react-native-vector-icons/FontAwesome5"
 import { Server } from "@env"
 import { TYPOGRAPHY } from "../styles/commonStyles"
 import { useNavigation } from "@react-navigation/native"
+import { useUser } from "../auth/UserContext"
 
 const { height } = Dimensions.get('screen')
 const { width } = Dimensions.get('window')
@@ -29,6 +30,7 @@ const ProfileFormat = (props) => {
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [isFollowing, setIsFollowing] = useState(false)
 
+    // 특정 사용자의 정보 불러오기
     const fetchUserInfo = async () => {
         try {
             const response = await fetch(`${Server}/user/get-info`, {
@@ -50,6 +52,7 @@ const ProfileFormat = (props) => {
         }
     }
 
+    // 특정 사용자의 게시물 불러오기
     const fetchPosts = async () => {
         try {
             const response = await fetch(`${Server}/post/get-user?userid=${userid}`);
@@ -67,6 +70,7 @@ const ProfileFormat = (props) => {
         }
     }
 
+    // 게시물 렌더
     const renderPost = ({ item }) => {
         return (
             <TouchableOpacity
@@ -136,6 +140,42 @@ const ProfileFormat = (props) => {
         navigation.navigate('Follower', { currentUser: user, targetUser: userid })
     }
 
+    // 디엠 화면으로 전환
+    const goToDirect = async () => {
+        try {
+            const response = await fetch(`${Server}/chat/get-room`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    currentUser: user,
+                    targetUser: userInfo.userid
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('채팅방을 가져오거나 생성하는 중 오류가 발생했습니다.');
+            }
+
+            const data = await response.json();
+            const chatId = data.chatId;
+            const currentUserId = data.currentUserId;
+
+            console.log(chatId, data.currentUserId, user, userInfo.userid);
+            navigation.navigate('Chat',
+                {
+                    chatId: chatId,
+                    currentUserId: currentUserId,
+                    currentUser: user,
+                    otherUser: userInfo.userid,
+                    other_profile_picture: userInfo.profile_picture
+                }
+            )
+        } catch (error) {
+            console.error('채팅방 이동에 실패했습니다.', error)
+        }
+    }
+
+    // 새로고침
     const refresh = () => {
         setIsRefreshing(true)
         fetchPosts()
@@ -145,6 +185,7 @@ const ProfileFormat = (props) => {
         }
     }
 
+    // userid가 바뀔 때마다 실행
     useEffect(() => {
         if (userid) {
             fetchUserInfo()
@@ -155,6 +196,7 @@ const ProfileFormat = (props) => {
         }
     }, [userid])
 
+    // 페이지 최초 실행 시 실행
     useEffect(() => {
         if (refreshProfile) {
             fetchUserInfo()
@@ -255,7 +297,7 @@ const ProfileFormat = (props) => {
                                     </TouchableOpacity>
 
                                     <TouchableOpacity
-                                        onPress={() => console.log('메시지 눌림')}
+                                        onPress={goToDirect}
                                         style={styles.messageButton}
                                     >
                                         <Text style={[TYPOGRAPHY.buttonText, { fontSize: 16 }]}>메시지</Text>
