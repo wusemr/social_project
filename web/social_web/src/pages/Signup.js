@@ -1,7 +1,10 @@
-import React, { useContext, useState } from "react"
+import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { validateId, validateUsername, validatePassword } from "../utils/validation"
 
 const Signup = () => {
+    const server = process.env.REACT_APP_SERVER_URL
+
     const navigate = useNavigate()
 
     const [username, setUsername] = useState('')
@@ -29,14 +32,64 @@ const Signup = () => {
         setConfirmPassword('')
     }
 
-    // 아이디 유효성 검사 함수
-    const validateId = (input) => {
-        const regex = /^[a-zA-Z0-9._]+$/
-        return regex.test(input)
+    // 회원가입 수행 함수
+    const handleSignup = async (e) => {
+        e.preventDefault()
+
+        // 공란 여부 검사
+        if (!username || !id || !password || !confirmPassword) {
+            alert('모든 정보를 입력해 주세요.')
+            return
+        }
+
+        // 아이디 유효성 검사
+        if (!availableId) {
+            alert('유효하지 않은 아이디입니다.')
+            return
+        }
+
+        // 사용자 이름 유효성 검사
+        if (!validateUsername(username)) {
+            alert('유효하지 않은 사용자 이름입니다.')
+            return
+        }
+
+        // 비밀번호 유효성 검사
+        if (!validatePassword(password)) {
+            alert('유효하지 않은 비밀번호입니다.')
+            return
+        }
+
+        // 비밀번호 & 비밀번호 확인 일치 여부 검사
+        if (password !== confirmPassword) {
+            alert('비밀번호가 일치하지 않습니다.')
+            return
+        }
+
+        try {
+            const response = await fetch(`${server}/auth/signup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, userid: id, password })
+            })
+
+            if (response.status === 201) {
+                alert('회원가입이 완료되었습니다.')
+                navigate('/login')
+                clearAll()
+            } else {
+                const errorData = await response.json()
+                alert(`회원가입에 실패했습니다: ${errorData.message}`)
+            }
+        } catch (e) {
+            console.error('[회원가입] 서버 요청 중 오류가 발생했습니다.', e)
+        }
     }
 
     // 아이디 중복 확인 함수
-    const handleCheckId = () => {
+    const handleCheckId = async () => {
         if (id === '') {
             setIdPlaceholder('아이디를 먼저 입력하세요.')
             setAvailableIdText('아이디 중복 여부를 확인해주세요.')
@@ -47,19 +100,34 @@ const Signup = () => {
             setId('')
             return
         } else {
-            // 중복 확인 로직을 추가로 구현해야 함
-        }
+            try {
+                const response = await fetch(`${server}/auth/check-id`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userid: id })
+                })
 
-        setAvailableId(true)
-        setAvailableIdText('사용 가능한 아이디입니다.')
-        setAvailableIdColor('#00AA00')
+                const result = await response.json()
+                if (result.available) {
+                    setAvailableId(true)
+                    setAvailableIdColor('#000AC9')
+                    setAvailableIdText('사용 가능한 아이디입니다.')
+                } else {
+                    setAvailableId(false);
+                    setAvailableIdColor('#DB0000')
+                    setAvailableIdText('이미 사용 중인 아이디입니다.')
+                }
+            } catch (error) {
+                console.error('[아이디중복확인] 서버 요청 중 오류가 발생했습니다:', error)
+            }
+        }
     }
 
 
     return (
         <div className="signup-container">
             <h3>회원가입</h3>
-            <form>
+            <form onSubmit={handleSignup}>
                 <div>
                     <label>이름</label>
                     <input
@@ -104,9 +172,11 @@ const Signup = () => {
                         }}
                         style={{ borderColor: isPasswordMatched ? "#00AA00" : "#FF0000" }}
                     />
-                    {!isPasswordMatched && confirmPassword !== "" && (
-                        <p style={{ color: "#FF0000" }}>비밀번호가 일치하지 않습니다.</p>
-                    )}
+                    {
+                        !isPasswordMatched && confirmPassword !== "" && (
+                            <p style={{ color: "#FF0000" }}>비밀번호가 일치하지 않습니다.</p>
+                        )
+                    }
                 </div>
                 <button type='submit'>회원가입</button>
             </form>
