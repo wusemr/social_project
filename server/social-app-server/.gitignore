@@ -4,7 +4,7 @@ node_modules/
 # 업로드 폴더(사진 파일 있음) 무시
 uploads/
 
-# 환경 변수 파일 무시
+# 환경변수 파일 무시
 .env
 
 # package-lock.json 파일 무시
