@@ -5,11 +5,13 @@ const bcrypt = require('bcrypt');   // 비밀번호 암호화
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cors = require('cors');
 
 dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = 5050;
+app.use(cors());
 
 // PostgreSql 연결 설정
 const pool = new Pool({
