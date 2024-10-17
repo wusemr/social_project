@@ -1,5 +1,5 @@
 import React, { useContext } from "react"
-import { Routes, Route, Navigate } from "react-router-dom"
+import { Routes, Route, Navigate, Link } from "react-router-dom"
 import { UserContext } from "../auth/UserContext"
 
 // import pages
@@ -11,24 +11,34 @@ const Navigation = () => {
     const { user } = useContext(UserContext)
 
     return (
-        <Routes>
-            { /** 로그인 여부에 따른 라우팅 처리 */
-                user ? (
-                    <>
-                        <Route path="/*" element={<Main />} />
-                        <Route path="/login" element={<Navigate to="/" />} />
-                        <Route path="/signup" element={<Navigate to="/" />} />
-                        <Route path="*" element={<Navigate to="/" />} />
-                    </>
-                ) : (
-                    <>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/signup" element={<Signup />} />
-                        <Route path="*" element={<Navigate to="/login" />} />
-                    </>
-                )
-            }
-        </Routes>
+        <div style={{ display: "flex" }}>
+            <nav className="sidebar" style={{ display: "grid" }}>
+                <Link to="/">홈</Link>
+                <Link to="/profile">프로필</Link>
+                <Link to="/settings">설정</Link>
+            </nav>
+            <div className="main-content">
+                <Routes>
+                    {/** 로그인 여부에 따른 라우팅 처리 */}
+                    {
+                        user ? (
+                            <>
+                                <Route path="/*" element={<Main />} />
+                                <Route path="/login" element={<Navigate to="/" />} />
+                                <Route path="/signup" element={<Navigate to="/" />} />
+                                <Route path="*" element={<Navigate to="/" />} />
+                            </>
+                        ) : (
+                            <>
+                                <Route path="/login" element={<Login />} />
+                                <Route path="/signup" element={<Signup />} />
+                                <Route path="*" element={<Navigate to="/login" />} />
+                            </>
+                        )
+                    }
+                </Routes>
+            </div>
+        </div>
     )
 }
 
