@@ -17,7 +17,8 @@ const PostFormat = ({
     isLiked,
     viewLikeList,
     goToProfile,
-    viewComments
+    openPost,
+    closePost
 }) => {
     const server = process.env.REACT_APP_SERVER_URL
 
@@ -31,12 +32,12 @@ const PostFormat = ({
         infinite: false,
         slidesToShow: 1,
         slidesToScroll: 1,
-        speed: 500
+        speed: 500,
+        accessibility: false
     }
 
     const [likes, setLikes] = useState(likeCount)
     const [liked, setLiked] = useState(isLiked)
-    // const [activeIndex, setActiveIndex] = useState(0)
 
     // 좋아요 개수 포맷 (1만 이상의 경우 만 단위로 출력)
     const formatLikes = (count) => {
@@ -53,8 +54,12 @@ const PostFormat = ({
         setLikes(liked ? likes - 1 : likes + 1)
     }
 
-    const handleViewComments = () => {
-        viewComments()
+    const handleOpenPost = () => {
+        openPost(postId)
+    }
+
+    const handleClosePost = () => {
+        closePost()
     }
 
     // 좋아요 누른 사용자 보기 버튼 이벤트
@@ -70,6 +75,7 @@ const PostFormat = ({
         <div className="post-format">
             <div
                 onClick={goToProfile}
+                style={{ cursor: 'pointer' }}
             >
                 <img
                     src={`${server}/${profilePic.uri}`}
@@ -102,12 +108,12 @@ const PostFormat = ({
                     )
                 }
 
-                <RiMessage3Line size={24} color="#666666" onClick={handleViewComments} style={{ cursor: 'pointer' }} />
+                <RiMessage3Line size={24} color="#666666" onClick={() => handleOpenPost()} style={{ cursor: 'pointer' }} />
             </span>
 
             <p
                 onClick={handleViewLikeButton}
-                style={{ cursor: 'default' }}
+                style={{ cursor: 'pointer' }}
             >
                 좋아요 {formatLikes(likes)}개
             </p>
@@ -115,19 +121,32 @@ const PostFormat = ({
             <div style={{ flexDirection: 'row' }}>
                 <span
                     onClick={goToProfile}
+                    style={{ cursor: 'pointer' }}
                 >
                     {userid}
                 </span>
 
-                <span>
+                <span
+                    style={{ cursor: 'text' }}
+                >
                     {caption}
                 </span>
             </div>
 
             {
-                commentCount !== 0 && (
-                    <p onClick={handleViewComments}>
+                commentCount !== 0 ? (
+                    <p
+                        onClick={() => handleOpenPost()}
+                        style={{ cursor: 'pointer' }}
+                    >
                         댓글 {commentCount}개 모두 보기
+                    </p>
+                ) : (
+                    <p
+                        onClick={() => handleOpenPost()}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        댓글 달기...
                     </p>
                 )
             }

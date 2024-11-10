@@ -4,6 +4,7 @@ import { UserContext } from "../auth/UserContext"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPaperPlane, faHeart } from "@fortawesome/free-regular-svg-icons"
 import PostFormat from "../components/PostFormat"
+import PostModal from "./PostModal"
 
 const Main = () => {
     const server = process.env.REACT_APP_SERVER_URL
@@ -15,9 +16,21 @@ const Main = () => {
     const [posts, setPosts] = useState([])
     const [loading, setLoading] = useState(true)
     const [isRefreshing, setIsRefreshing] = useState(false)
-    // const [commentVisible, setCommentVisible] = useState(false)
-    // const [selectedPostId, setSelectedPostId] = useState(null)
     const [unreadNotificationCount, setUnreadNotificationCount] = useState(0)
+    const [modalOpen, setModalOpen] = useState(false)
+    const [selectedPostId, setSelectedPostId] = useState(null)
+
+    const handleOpenPost = (postID) => {
+        if (!modalOpen) {
+            setSelectedPostId(postID)
+            setModalOpen(true)
+        }
+    }
+
+    const handleClosePost = () => {
+        setSelectedPostId(null)
+        setModalOpen(false)
+    }
 
     const goToNotofication = () => {
         navigate('/notification')
@@ -59,25 +72,49 @@ const Main = () => {
     // 좋아요 & 좋아요 취소
     const handleLike = async (postId) => {
         try {
+            const response = await fetch(`${server}/post/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user?.userid, postId })
+            })
 
+            if (response.ok) {
+                setPosts((prevPosts) =>
+                    prevPosts.map((post) =>
+                        post.post_id === postId
+                            ? {
+                                ...post,
+                                liked: !post.liked,
+                                like_count: post.liked
+                                    ? post.like_count - 1
+                                    : post.like_count
+                            }
+                            : post
+                    )
+                )
+            } else {
+                console.error('좋아요 요청 실패:', await response.text())
+            }
         } catch (e) {
-
+            console.error('좋아요 처리 중 오류가 발생했습니다.', e)
         }
-    }
-
-    // 게시물 및 댓글 열기
-    const handleOpenPost = (postId) => {
-
     }
 
     // 좋아요 리스트 출력
     const viewLikeList = async (postId) => {
+        try {
+            const response = await fetch(`${server}/user/get-list/like?postId=${postId}&currentUser=${user?.userid}`)
+            const likedUsers = await response.json()
 
-    }
-
-    // 댓글창 열기
-    const handleOpenComments = (postID) => {
-        
+            if (response.ok) {
+                console.log('받아온 좋아요 누른 사람 목록:', likedUsers)
+                // 좋아요 리스트 출력할 모달?화면? 추가 필요
+            } else {
+                console.error('좋아요한 사용자 목록을 불러오는 중 오류가 발생했습니다.')
+            }
+        } catch (e) {
+            console.error('좋아요한 사용자 목록 조회를 요청하는 중 오류가 발생했습니다.', e)
+        }
     }
 
     // const refresh = () => {
@@ -111,13 +148,14 @@ const Main = () => {
                 {
                     posts ? (
                         <div className="post-list">
-                            <p>
+                            <div>
                                 {
                                     posts.map(item => (
                                         <PostFormat
-                                            profilePic={{uri: item.profile_picture}}
+                                            key={item.post_id}
+                                            profilePic={{ uri: item.profile_picture }}
                                             userid={item.userid}
-                                            postImages={item.images.map(image => ({uri: image}))}
+                                            postImages={item.images.map(image => ({ uri: image }))}
                                             likeCount={Number(item.like_count)}
                                             caption={item.content}
                                             commentCount={Number(item.comment_count)}
@@ -126,17 +164,34 @@ const Main = () => {
                                             isLiked={item.isLiked}
                                             viewLikeList={() => viewLikeList(item.post_id)}
                                             goToProfile={() => goToProfile(item.userid)}
-                                            viewComments={() => handleOpenComments(item.post_id)}
+                                            openPost={() => handleOpenPost(item.post_id)}
+                                            closePost={() => handleClosePost()}
                                         />
                                     ))
                                 }
-                            </p>
+                            </div>
                         </div>
                     ) : (
                         <p>로딩 중...</p>
                     )
                 }
             </div>
+
+            {
+                selectedPostId && (
+                    <PostModal
+                        currentUser={user?.userid}
+                        isOpen={modalOpen}
+                        closeModal={handleClosePost}
+                        post={posts.find(post => post.post_id === selectedPostId)}
+                        handleLike={handleLike}
+                        viewLikeList={viewLikeList}
+                        goToProfile={goToProfile}
+                        openPost={handleOpenPost}
+                        closePost={handleClosePost}
+                    />
+                )
+            }
         </div>
     )
 }
